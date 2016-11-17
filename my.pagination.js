@@ -13,19 +13,20 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
 			'ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\', false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == 1]">'+
 			'<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text l-btn-empty">&nbsp;</span>'+
 			'<span class="l-btn-icon pag-first">&nbsp;</span></span></a></td>'+
-			'<td><a href="javascript:void(0)" ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\',false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == 1]">'+
+			'<td><a href="javascript:void(0)" ng-click="prevPage()" ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\',false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == 1]">'+
 			'<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text l-btn-empty">&nbsp;</span><span class="l-btn-icon pag-prev">&nbsp;</span></span></a></td>'+
 			'<td><div class="pag-btn-separator"></div></td><td><span style="padding-left: 6px;">Page</span></td>'+
-			'<td><input class="pag-num" ng-model="conf.currentPage" ng-keyup="jumpPageKeyUp($event)" type="text" value="{conf.currentPage}" size="2">'+
-			'</td><td><span style="padding-right: 6px;">of {{conf.pagesLength}}</span></td>'+
+			'<td><input class="pag-num" ng-model="jumpPageNum" ng-keyup="jumpPageKeyUp($event)" type="text" value="{jumpPageNum}" size="3">'+
+			'</td><td><span style="padding-right: 6px;">of {{conf.numberOfPages}}</span></td>'+
 			'<td><div class="pag-btn-separator"></div></td><td>'+
-			'<a href="javascript:void(0)" ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\',false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == conf.numberOfPages]">'+
+			'<a href="javascript:void(0)" ng-click="nextPage()" ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\',false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == conf.numberOfPages]">'+
 			'<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text l-btn-empty">&nbsp;</span><span class="l-btn-icon pag-next">&nbsp;</span></span></a></td>'+
 			'<td><a href="javascript:void(0)" ng-class="{true:\'l-btn l-btn-small l-btn-plain l-btn-disabled l-btn-plain-disabled\',false:\'l-btn l-btn-small l-btn-plain\'}[conf.currentPage == conf.numberOfPages]">'+
 			'<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text l-btn-empty">&nbsp;</span><span class="l-btn-icon pag-last">&nbsp;</span></span></a></td>'+
 			'<td><div class="pag-btn-separator"></div></td><td><a href="javascript:void(0)" class="l-btn l-btn-small l-btn-plain">'+
 			'<span class="l-btn-left l-btn-icon-left"><span class="l-btn-text l-btn-empty">&nbsp;</span><span class="l-btn-icon pag-load">&nbsp;</span></span></a></td>'+
-            '</tr></tbody></table><div class="pag-info">Displaying 1 to 10 of 114 items</div><div style="clear: both;"></div></div></div>',
+            '</tr></tbody></table><div class="pag-info">Displaying {{(conf.currentPage-1) * conf.itemsPerPage + 1}} to {{(((conf.currentPage-1) * conf.itemsPerPage + conf.itemsPerPage) <= conf.totalItems)?'+
+            '((conf.currentPage-1) * conf.itemsPerPage + conf.itemsPerPage) : conf.totalItems}} of {{conf.numberOfPages}} items</div><div style="clear: both;"></div></div></div>',
         replace: true,
         scope: {
             conf: '='
@@ -33,9 +34,11 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
         link: function(scope, element, attrs) {
             
             var conf = scope.conf;
+            
+            scope.jumpPageNum = 1;
 
             // 默认分页长度
-            var defaultPagesLength = 9;
+            var defaultPagesLength = 15;
 
             // 默认分页选项可调整每页显示的条数
             var defaultPerPageOptions = [10, 15, 20, 30, 50];
@@ -58,7 +61,7 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
                 }
 
             } else {
-                conf.pagesLength = defaultPagesLength
+                conf.pagesLength = defaultPagesLength;
             }
 
             // 分页选项可调整每页显示的条数
@@ -169,6 +172,18 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
 
                 scope.$parent.conf = conf;
             }
+            
+            // firstPage
+            scope.firstPage = function(){
+            	conf.currentPage = 1;
+            	 getPagination();
+            }
+            
+            // endPage
+            scope.endPage = function(){
+            	conf.currentPage = numberOfPages;
+            	 getPagination();
+            }
 
             // prevPage
             scope.prevPage = function() {
@@ -203,7 +218,7 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
             scope.changeItemsPerPage = function() {
 
                 // 一发展示条数变更，当前页将重置为1
-                conf.currentPage = 1;
+                conf.currentPage = scope.jumpPageNum = 1;
 
                 getPagination();
                 // conf.onChange()函数
@@ -213,34 +228,39 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
             };
 
             // 跳转页
-            scope.jumpToPage = function() {
-                num = scope.jumpPageNum;
-                if(num.match(/\d+/)) {
-                    num = parseInt(num, 10);
+            scope.jumpToPage = function(num) {
+                num = parseInt(num, 10);
                 
-                    if(num && num != conf.currentPage) {
-                        if(num > conf.numberOfPages) {
-                            num = conf.numberOfPages;
-                        }
-
-                        // 跳转
-                        conf.currentPage = num;
-                        getPagination();
-                        // conf.onChange()函数
-                        if(conf.onChange) {    
-                            conf.onChange();
-                        }
-                        scope.jumpPageNum = '';
+                if(num && num != conf.currentPage) {
+                	if(num > conf.numberOfPages) {
+                		num = conf.numberOfPages;
                     }
-                }
-                
+
+                    // 跳转
+                    conf.currentPage = num;
+                    getPagination();
+                    // conf.onChange()函数
+                    if(conf.onChange) {    
+                    	conf.onChange();
+                    }
+                    scope.conf.currentPage = scope.jumpPageNum;
+               }
             };
 
             scope.jumpPageKeyUp = function(e) {
+            	var num = scope.jumpPageNum;
+            	if(num.match(/^[0-9]*$/)) {
+            		if (num <= 0) {
+            			scope.jumpPageNum = 1;
+                	}
+                	if (num > scope.conf.numberOfPages) {
+                		scope.jumpPageNum = scope.conf.numberOfPages;
+                	}
+            	}
                 var keycode = window.event ? e.keyCode :e.which;
                 
                 if(keycode == 13) {
-                    scope.jumpToPage();
+                    scope.jumpToPage(num);
                 }
             }
 
