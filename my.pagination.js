@@ -175,13 +175,13 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
             
             // firstPage
             scope.firstPage = function(){
-            	conf.currentPage = 1;
+            	conf.currentPage = scope.jumpPageNum = 1;
             	 getPagination();
             }
             
             // endPage
             scope.endPage = function(){
-            	conf.currentPage = numberOfPages;
+            	conf.currentPage = scope.jumpPageNum = numberOfPages;
             	 getPagination();
             }
 
@@ -189,6 +189,7 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
             scope.prevPage = function() {
                 if(conf.currentPage > 1){
                     conf.currentPage -= 1;
+                    scope.jumpPageNum = conf.currentPage;
                 }
             };
 
@@ -196,6 +197,7 @@ angular.module('my.pagination', []).directive('myPagination',[function(){
             scope.nextPage = function() {
                 if(conf.currentPage < conf.numberOfPages){
                     conf.currentPage += 1;
+                    scope.jumpPageNum = conf.currentPage;
                 }
             };
 
